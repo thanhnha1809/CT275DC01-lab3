@@ -146,5 +146,10 @@ protected function fillFromDbRow(array $row): Contact
 
         return null;
     }
+    public function delete(): bool
+    {
+        $statement = $this->db->prepare('delete from contacts where id = :id');
+        return $statement->execute(['id' => $this->id]);
+    }
     
 }
