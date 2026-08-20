@@ -4,18 +4,18 @@ require_once __DIR__ . '/../src/bootstrap.php';
 use CT275\Labs\Contact;
 use CT275\Labs\Paginator;
 
-$contactObj = new Contact($PDO);
+$contact = new Contact($PDO);
 
 $limit = (isset($_GET['limit']) && is_numeric($_GET['limit'])) ?
     (int)$_GET['limit'] : 5;
 $page = (isset($_GET['page']) && is_numeric($_GET['page'])) ?
     (int)$_GET['page'] : 1;
 $paginator = new Paginator(
-    totalRecords: $contactObj->count(),
+    totalRecords: $contact->count(),
     recordsPerPage: $limit,
     currentPage: $page
 );
-$contacts = $contactObj->paginate($paginator->recordOffset, $paginator->recordsPerPage);
+$contacts = $contact->paginate($paginator->recordOffset, $paginator->recordsPerPage);
 $pages = $paginator->getPages(length: 3);
 
 include_once __DIR__ . '/../src/partials/header.php';
@@ -24,6 +24,7 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
+  <!-- Main Page Content -->
   <div class="container">
 
     <?php
@@ -38,6 +39,7 @@ include_once __DIR__ . '/../src/partials/header.php';
           <i class="fa fa-plus"></i> New Contact
         </a>
 
+        <!-- Table Starts Here -->
         <table id="contacts" class="table table-striped table-bordered">
           <thead>
             <tr>
@@ -57,7 +59,7 @@ include_once __DIR__ . '/../src/partials/header.php';
                   <td><?= html_escape(date("d-m-Y", strtotime($contact->created_at))) ?></td>
                   <td><?= html_escape($contact->notes) ?></td>
                   <td class="d-flex justify-content-center">
-                    <a href="edit.php?id=<?= urlencode($contact->id) ?>" class="btn btn-xs btn-warning">
+                    <a href="/edit.php?id=<?= $contact->id ?>" class="btn btn-xs btn-warning">
                       <i alt="Edit" class="fa fa-pencil"></i> Edit
                     </a>
                     <a href="#" class="btn btn-xs btn-danger ms-1">
@@ -73,7 +75,9 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif; ?>
           </tbody>
         </table>
-  
+        <!-- Table Ends Here -->
+
+        <!-- Pagination -->
         <nav class="d-flex justify-content-center">
           <ul class="pagination">
             <li class="page-item <?= $paginator->getPrevPage() ? '' : 'disabled' ?>">
