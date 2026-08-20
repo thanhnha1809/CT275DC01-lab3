@@ -24,7 +24,6 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
-  <!-- Main Page Content -->
   <div class="container">
 
     <?php
@@ -39,7 +38,6 @@ include_once __DIR__ . '/../src/partials/header.php';
           <i class="fa fa-plus"></i> New Contact
         </a>
 
-        <!-- Table Starts Here -->
         <table id="contacts" class="table table-striped table-bordered">
           <thead>
             <tr>
@@ -62,9 +60,13 @@ include_once __DIR__ . '/../src/partials/header.php';
                     <a href="/edit.php?id=<?= $contact->id ?>" class="btn btn-xs btn-warning">
                       <i alt="Edit" class="fa fa-pencil"></i> Edit
                     </a>
-                    <a href="#" class="btn btn-xs btn-danger ms-1">
-                      <i alt="Delete" class="fa fa-trash"></i> Delete
-                    </a>
+                    
+                    <form class="ms-1" action="/delete.php" method="POST">
+                      <input type="hidden" name="id" value="<?= $contact->id ?>">
+                      <button type="submit" class="btn btn-xs btn-danger" name="delete-contact">
+                        <i alt="Delete" class="fa fa-trash"></i> Delete
+                      </button>
+                    </form>
                   </td>
                 </tr>
               <?php endforeach ?>
@@ -75,9 +77,7 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif; ?>
           </tbody>
         </table>
-        <!-- Table Ends Here -->
 
-        <!-- Pagination -->
         <nav class="d-flex justify-content-center">
           <ul class="pagination">
             <li class="page-item <?= $paginator->getPrevPage() ? '' : 'disabled' ?>">
@@ -111,20 +111,54 @@ include_once __DIR__ . '/../src/partials/header.php';
       <div class="modal-content">
         <div class="modal-header">
           <h4 class="modal-title">Confirmation</h4>
-          <button type="button" class="btn-close" data-bs-dismiss="modal">
-          </button>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">Do you want to delete this contact?</div>
         <div class="modal-footer">
-          <button type="button" data-bs-dismiss="modal" class="btn btn-danger" id="delete">Delete</button>
-          <button type="button" data-bs-dismiss="modal" class="btn btn-default">Cancel</button>
+          <button type="button" class="btn btn-danger" id="delete">Delete</button>
+          <button type="button" data-bs-dismiss="modal" class="btn btn-secondary">Cancel</button>
         </div>
       </div>
     </div>
   </div>
 
   <?php include_once __DIR__ . '/../src/partials/footer.php' ?>
+
   <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      let currentFormToDelete = null;
+
+      const deleteButtons = document.querySelectorAll('button[name="delete-contact"]');
+      deleteButtons.forEach(button => {
+        button.addEventListener('click', function (e) {
+          e.preventDefault();
+
+          currentFormToDelete = button.closest('form');
+
+          const nameTd = button.closest('tr').querySelector('td:first-child');
+          if (nameTd) {
+            document.querySelector('.modal-body').textContent = 
+              `Do you want to delete "${nameTd.textContent.trim()}"?`;
+          }
+
+          const modalEl = document.getElementById('delete-confirm');
+          const confirmModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
+            backdrop: 'static',
+            keyboard: false
+          });
+          confirmModal.show();
+        });
+      });
+
+      const modalDeleteBtn = document.getElementById('delete');
+      if (modalDeleteBtn) {
+        modalDeleteBtn.addEventListener('click', function () {
+          if (currentFormToDelete) {
+            currentFormToDelete.submit();
+          }
+        });
+      }
+    });
   </script>
 </body>
 
