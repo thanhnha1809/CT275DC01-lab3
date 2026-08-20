@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
 
+use CT275\Labs\Contact;
+
+$contactObj = new Contact($PDO);
+$contacts = $contactObj->all();
+
 include_once __DIR__ . '/../src/partials/header.php';
 ?>
 
@@ -11,7 +16,7 @@ include_once __DIR__ . '/../src/partials/header.php';
   <div class="container">
 
     <?php
-    $subtitle = 'View your all contacs here.';
+    $subtitle = 'View your all contacts here.';
     include_once __DIR__ . '/../src/partials/heading.php';
     ?>
 
@@ -34,7 +39,28 @@ include_once __DIR__ . '/../src/partials/header.php';
             </tr>
           </thead>
           <tbody>
-
+            <?php if (!empty($contacts)): ?>
+              <?php foreach ($contacts as $contact): ?>
+                <tr>
+                  <td><?= html_escape($contact->name) ?></td>
+                  <td><?= html_escape($contact->phone) ?></td>
+                  <td><?= html_escape(date("d-m-Y", strtotime($contact->created_at))) ?></td>
+                  <td><?= html_escape($contact->notes) ?></td>
+                  <td class="d-flex justify-content-center">
+                    <a href="edit.php?id=<?= urlencode($contact->id) ?>" class="btn btn-xs btn-warning">
+                      <i alt="Edit" class="fa fa-pencil"></i> Edit
+                    </a>
+                    <a href="#" class="btn btn-xs btn-danger ms-1">
+                      <i alt="Delete" class="fa fa-trash"></i> Delete
+                    </a>
+                  </td>
+                </tr>
+              <?php endforeach ?>
+            <?php else: ?>
+              <tr>
+                <td colspan="5" class="text-center">Không có liên hệ nào.</td>
+              </tr>
+            <?php endif; ?>
           </tbody>
         </table>
         <!-- Table Ends Here -->
