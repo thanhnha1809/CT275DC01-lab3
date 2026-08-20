@@ -23,6 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = $contact->validate($contactData);
     if (empty($errors)) {
         $contact->fill($contactData);
+        $contact->handleUpload($_FILES['avatar'] ?? []);
         $contact->save() && redirect('/');
     }
 }
@@ -33,6 +34,7 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
+  <!-- Main Page Content -->
   <div class="container">
 
     <?php
@@ -43,10 +45,11 @@ include_once __DIR__ . '/../src/partials/header.php';
     <div class="row">
       <div class="col-12">
 
-        <form method="post" class="col-md-6 offset-md-3">
+        <form method="post" enctype="multipart/form-data" class="col-md-6 offset-md-3">
 
           <input type="hidden" name="id" value="<?= $contact->id ?>">
 
+          <!-- Name -->
           <div class="mb-3">
             <label for="name" class="form-label">Name</label>
             <input type="text" name="name" class="form-control<?= isset($errors['name']) ? ' is-invalid' : '' ?>" maxlen="255" id="name" placeholder="Enter Name" value="<?= html_escape($contact->name) ?>" />
@@ -58,6 +61,7 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
+          <!-- Phone -->
           <div class="mb-3">
             <label for="phone" class="form-label">Phone Number</label>
             <input type="text" name="phone" class="form-control<?= isset($errors['phone']) ? ' is-invalid' : '' ?>" maxlen="255" id="phone" placeholder="Enter Phone" value="<?= html_escape($contact->phone) ?>" />
@@ -69,6 +73,7 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
+          <!-- Notes -->
           <div class="mb-3">
             <label for="notes" class="form-label">Notes </label>
             <textarea name="notes" id="notes" class="form-control<?= isset($errors['notes']) ? ' is-invalid' : '' ?>" placeholder="Enter notes (maximum character limit: 255)"><?= html_escape($contact->notes) ?></textarea>
@@ -80,6 +85,21 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
+          <!-- Avatar Upload -->
+          <div class="mb-3">
+            <label for="avatar" class="form-label">Avatar</label>
+            <?php if (!empty($contact->avatar)): ?>
+              <div class="mb-2">
+                <img src="/uploads/<?= html_escape($contact->avatar) ?>" alt="Current Avatar" style="max-height: 80px;" class="rounded">
+              </div>
+            <?php endif; ?>
+            <input type="file" name="avatar" class="form-control" id="avatar" accept="image/*">
+            <div class="mt-2">
+                <img id="avatar-preview" src="#" alt="Preview" style="max-height: 120px; display: none;" class="rounded">
+            </div>
+          </div>
+
+          <!-- Submit -->
           <button type="submit" name="submit" class="btn btn-primary">Update Contact</button>
           <a href="/" class="btn btn-secondary">Cancel</a>
         </form>
@@ -90,6 +110,16 @@ include_once __DIR__ . '/../src/partials/header.php';
   </div>
 
   <?php include_once __DIR__ . '/../src/partials/footer.php' ?>
+  <script>
+    document.getElementById('avatar').addEventListener('change', function(e) {
+        const [file] = e.target.files;
+        if (file) {
+            const preview = document.getElementById('avatar-preview');
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+        }
+    });
+  </script>
 </body>
 
 </html>
