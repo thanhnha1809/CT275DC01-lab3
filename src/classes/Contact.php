@@ -6,72 +6,75 @@ use PDO;
 
 class Contact
 {
-  private ?PDO $db;
+    private ?PDO $db;
 
-  public int $id = -1;
-  public $name;
-  public $phone;
-  public $notes;
-  public $created_at;
-  public $updated_at;
+    public int $id = -1;
+    public $name;
+    public $phone;
+    public $notes;
+    public $created_at;
+    public $updated_at;
+    public ?string $avatar = null;
 
-  public function __construct(?PDO $pdo)
-  {
-    $this->db = $pdo;
-  }
-
- public function all(): array
-{
-    $contacts = [];
-
-    $statement = $this->db->prepare('select * from contacts');
-    $statement->execute();
-    while ($row = $statement->fetch()) {
-        $contact = new Contact($this->db);
-        $contact->fillFromDbRow($row);
-        $contacts[] = $contact;
+    public function __construct(?PDO $pdo)
+    {
+        $this->db = $pdo;
     }
 
-    return $contacts;
-}
+    public function all(): array
+    {
+        $contacts = [];
 
-protected function fillFromDbRow(array $row): Contact
-{
-    $this->id = $row['id'];
-    $this->name = $row['name'];
-    $this->phone = $row['phone'];
-    $this->notes = $row['notes'];
-    $this->created_at = $row['created_at'];
-    $this->updated_at = $row['updated_at'];
+        $statement = $this->db->prepare('select * from contacts');
+        $statement->execute();
+        while ($row = $statement->fetch()) {
+            $contact = new Contact($this->db);
+            $contact->fillFromDbRow($row);
+            $contacts[] = $contact;
+        }
 
-    return $this;
-}
-
-  public function validate(array $data): array
-  {
-    $errors = [];
-
-    $name = trim($data['name'] ?? '');
-    if (!$name) {
-      $errors['name'] = 'Invalid name.';
+        return $contacts;
     }
 
-    $validPhone = preg_match(
-      '/^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b$/',
-      $data['phone'] ?? ''
-    );
-    if (!$validPhone) {
-      $errors['phone'] = 'Invalid phone number.';
+    protected function fillFromDbRow(array $row): Contact
+    {
+        $this->id = $row['id'];
+        $this->name = $row['name'];
+        $this->phone = $row['phone'];
+        $this->notes = $row['notes'];
+        $this->avatar = $row['avatar'] ?? null;
+        $this->created_at = $row['created_at'];
+        $this->updated_at = $row['updated_at'];
+
+        return $this;
     }
 
-    $notes = trim($data['notes'] ?? '');
-    if (strlen($notes) > 255) {
-      $errors['notes'] = 'Notes must be at most 255 characters.';
+    public function validate(array $data): array
+    {
+        $errors = [];
+
+        $name = trim($data['name'] ?? '');
+        if (!$name) {
+            $errors['name'] = 'Invalid name.';
+        }
+
+        $validPhone = preg_match(
+            '/^(03|05|07|08|09|01[2|6|8|9])+([0-9]{8})\b$/',
+            $data['phone'] ?? ''
+        );
+        if (!$validPhone) {
+            $errors['phone'] = 'Invalid phone number.';
+        }
+
+        $notes = trim($data['notes'] ?? '');
+        if (strlen($notes) > 255) {
+            $errors['notes'] = 'Notes must be at most 255 characters.';
+        }
+
+        return $errors;
     }
 
-    return $errors;
-  }
-  public function count(): int
+    public function count(): int
     {
         $statement = $this->db->prepare('select count(*) from contacts');
         $statement->execute();
@@ -94,6 +97,7 @@ protected function fillFromDbRow(array $row): Contact
 
         return $contacts;
     }
+
     public function save(): bool
     {
         $result = false;
@@ -101,24 +105,26 @@ protected function fillFromDbRow(array $row): Contact
         if ($this->id >= 0) {
             $statement = $this->db->prepare(
                 'update contacts set name = :name,
-                    phone = :phone, notes = :notes, updated_at = now()
+                    phone = :phone, notes = :notes, avatar = :avatar, updated_at = now()
                  where id = :id'
             );
             $result = $statement->execute([
                 'name' => $this->name,
                 'phone' => $this->phone,
                 'notes' => $this->notes,
+                'avatar' => $this->avatar,
                 'id' => $this->id
             ]);
         } else {
             $statement = $this->db->prepare(
-                'insert into contacts (name, phone, notes, created_at, updated_at)
-                 values (:name, :phone, :notes, now(), now())'
+                'insert into contacts (name, phone, notes, avatar, created_at, updated_at)
+                 values (:name, :phone, :notes, :avatar, now(), now())'
             );
             $result = $statement->execute([
                 'name' => $this->name,
                 'phone' => $this->phone,
-                'notes' => $this->notes
+                'notes' => $this->notes,
+                'avatar' => $this->avatar
             ]);
             if ($result) {
                 $this->id = $this->db->lastInsertId();
@@ -127,13 +133,15 @@ protected function fillFromDbRow(array $row): Contact
 
         return $result;
     }
-      public function fill(array $data): Contact
+
+    public function fill(array $data): Contact
     {
         $this->name = trim($data['name'] ?? '');
         $this->phone = trim($data['phone'] ?? '');
         $this->notes = trim($data['notes'] ?? '');
         return $this;
     }
+
     public function find(int $id): ?Contact
     {
         $statement = $this->db->prepare('select * from contacts where id = :id');
@@ -146,10 +154,35 @@ protected function fillFromDbRow(array $row): Contact
 
         return null;
     }
+
     public function delete(): bool
     {
+        $uploadDir = __DIR__ . '/../../public/uploads/';
+        if ($this->avatar && file_exists($uploadDir . $this->avatar)) {
+            @unlink($uploadDir . $this->avatar);
+        }
+
         $statement = $this->db->prepare('delete from contacts where id = :id');
         return $statement->execute(['id' => $this->id]);
     }
-    
+
+    public function handleUpload(array $file): void
+    {
+        if (isset($file['tmp_name']) && !empty($file['tmp_name'])) {
+            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $filename = uniqid('avatar_') . '.' . $ext;
+            $uploadDir = __DIR__ . '/../../public/uploads/';
+
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+
+            if (move_uploaded_file($file['tmp_name'], $uploadDir . $filename)) {
+                if ($this->avatar && file_exists($uploadDir . $this->avatar)) {
+                    @unlink($uploadDir . $this->avatar);
+                }
+                $this->avatar = $filename;
+            }
+        }
+    }
 }
