@@ -1,10 +1,31 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
-require_once __DIR__ . '/../src/classes/Contact.php';
 
 use CT275\Labs\Contact;
 
-$contact = new Contact(null);
+$contact = new Contact($PDO);
+
+$id = isset($_REQUEST['id']) ?
+    filter_var($_REQUEST['id'], FILTER_VALIDATE_INT) : false;
+
+if (!$id || !($contact->find($id))) {
+    redirect('/');
+}
+
+$errors = [];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $contactData = [
+        'name' => $_POST['name'] ?? '',
+        'phone' => $_POST['phone'] ?? '',
+        'notes' => $_POST['notes'] ?? '',
+    ];
+
+    $errors = $contact->validate($contactData);
+    if (empty($errors)) {
+        $contact->fill($contactData);
+        $contact->save() && redirect('/');
+    }
+}
 
 include_once __DIR__ . '/../src/partials/header.php';
 ?>
@@ -12,7 +33,6 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
-  <!-- Main Page Content -->
   <div class="container">
 
     <?php
@@ -27,7 +47,6 @@ include_once __DIR__ . '/../src/partials/header.php';
 
           <input type="hidden" name="id" value="<?= $contact->id ?>">
 
-          <!-- Name -->
           <div class="mb-3">
             <label for="name" class="form-label">Name</label>
             <input type="text" name="name" class="form-control<?= isset($errors['name']) ? ' is-invalid' : '' ?>" maxlen="255" id="name" placeholder="Enter Name" value="<?= html_escape($contact->name) ?>" />
@@ -39,7 +58,6 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
-          <!-- Phone -->
           <div class="mb-3">
             <label for="phone" class="form-label">Phone Number</label>
             <input type="text" name="phone" class="form-control<?= isset($errors['phone']) ? ' is-invalid' : '' ?>" maxlen="255" id="phone" placeholder="Enter Phone" value="<?= html_escape($contact->phone) ?>" />
@@ -51,7 +69,6 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
-          <!-- Notes -->
           <div class="mb-3">
             <label for="notes" class="form-label">Notes </label>
             <textarea name="notes" id="notes" class="form-control<?= isset($errors['notes']) ? ' is-invalid' : '' ?>" placeholder="Enter notes (maximum character limit: 255)"><?= html_escape($contact->notes) ?></textarea>
@@ -63,8 +80,8 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
-          <!-- Submit -->
           <button type="submit" name="submit" class="btn btn-primary">Update Contact</button>
+          <a href="/" class="btn btn-secondary">Cancel</a>
         </form>
 
       </div>
