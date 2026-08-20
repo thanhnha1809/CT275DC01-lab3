@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors = $contact->validate($contactData);
     if (empty($errors)) {
         $contact->fill($contactData);
+        $contact->handleUpload($_FILES['avatar'] ?? []);
         $contact->save() && redirect('/');
     }
 }
@@ -36,7 +37,7 @@ include_once __DIR__ . '/../src/partials/header.php';
     <div class="row">
       <div class="col-12">
 
-        <form method="post" class="col-md-6 offset-md-3">
+        <form method="post" enctype="multipart/form-data" class="col-md-6 offset-md-3">
 
           <div class="mb-3">
             <label for="name" class="form-label">Name</label>
@@ -71,6 +72,14 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif ?>
           </div>
 
+          <div class="mb-3">
+            <label for="avatar" class="form-label">Avatar</label>
+            <input type="file" name="avatar" class="form-control" id="avatar" accept="image/*">
+            <div class="mt-2">
+                <img id="avatar-preview" src="#" alt="Preview" style="max-height: 120px; display: none;" class="rounded">
+            </div>
+          </div>
+
           <button type="submit" name="submit" class="btn btn-primary">Add Contact</button>
         </form>
 
@@ -80,6 +89,16 @@ include_once __DIR__ . '/../src/partials/header.php';
   </div>
 
   <?php include_once __DIR__ . '/../src/partials/footer.php' ?>
+  <script>
+    document.getElementById('avatar').addEventListener('change', function(e) {
+        const [file] = e.target.files;
+        if (file) {
+            const preview = document.getElementById('avatar-preview');
+            preview.src = URL.createObjectURL(file);
+            preview.style.display = 'block';
+        }
+    });
+  </script>
 </body>
 
 </html>
