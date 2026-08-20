@@ -24,7 +24,6 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
-  <!-- Main Page Content -->
   <div class="container">
 
     <?php
@@ -39,7 +38,6 @@ include_once __DIR__ . '/../src/partials/header.php';
           <i class="fa fa-plus"></i> New Contact
         </a>
 
-        <!-- Table Starts Here -->
         <table id="contacts" class="table table-striped table-bordered">
           <thead>
             <tr>
@@ -75,9 +73,7 @@ include_once __DIR__ . '/../src/partials/header.php';
             <?php endif; ?>
           </tbody>
         </table>
-        <!-- Table Ends Here -->
-
-        <!-- Pagination -->
+  
         <nav class="d-flex justify-content-center">
           <ul class="pagination">
             <li class="page-item <?= $paginator->getPrevPage() ? '' : 'disabled' ?>">
